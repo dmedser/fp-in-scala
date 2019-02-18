@@ -9,7 +9,7 @@ case class Person(name: String, age: Int)
 
 object Main extends App {
 
-  val mapStrIntMonoid = Monoid[Map[String, Int]]
+/*  val mapStrIntMonoid = Monoid[Map[String, Int]]
 
   val mapStrPersonMonoid = Monoid[Map[String, Person]]
 
@@ -22,6 +22,17 @@ object Main extends App {
 
 
   println(mapStrIntMonoid.combine(m1, m2) == mapStrIntMonoid.combine(m2, m1))
-  println(mapStrIntMonoid.combine(m1, m1) == m1)
+  println(mapStrIntMonoid.combine(m1, m1) == m1)*/
+
+  def foldr[A, B](fa: List[A])(z: B)(f: (A, B) => B): B = {
+    fa.foldLeft(z)((b: B, a: A) ⇒ f(a, b))
+  }
+
+
+
+  println(foldr(List(1, 2, 3))(0)(_ - _) == List(1, 2, 3).foldRight(0)(_ - _))
+
+
+  println(List.empty[Int].foldRight(Option.empty[Int]) { case (a, b) ⇒ Some(a) })
 
 }
