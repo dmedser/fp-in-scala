@@ -28,11 +28,18 @@ object Main extends App {
     fa.foldLeft(z)((b: B, a: A) ⇒ f(a, b))
   }
 
+  def foldrN[A, B](fa: List[A])(n: Int)(z: B)(f: (A, B) => B): B = {
+    if(n > 0) {
+      val zero = (z, fa.length)
+      val (res, _) = fa.foldRight(zero) { case (elem, (acc, idx)) ⇒
+        if(idx > n) (acc, idx - 1)
+        else (f(elem, acc), idx)
+      }
+      res
+    }
+    else z
+  }
 
-
-  println(foldr(List(1, 2, 3))(0)(_ - _) == List(1, 2, 3).foldRight(0)(_ - _))
-
-
-  println(List.empty[Int].foldRight(Option.empty[Int]) { case (a, b) ⇒ Some(a) })
+  println(foldrN(List(1, 2, 3, 4))(3)(0)(_ - _))
 
 }

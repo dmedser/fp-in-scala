@@ -2,7 +2,6 @@ package lesson7
 
 import cats.Monoid
 import cats.syntax.semigroup._
-import cats.implicits._
 
 trait Foldable[F[_]] {
 
@@ -74,9 +73,15 @@ trait Foldable[F[_]] {
 
   // Часть 3.
   def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, B) => B): B = {
-
-    foldr(fa)((length(fa), ))
-
+    if(n > 0) {
+      val zero = (z, length(fa))
+      val (res, _) = foldr(fa)(zero) { case (elem, (acc, idx)) ⇒
+        if(idx > n) (acc, idx - 1)
+        else (f(elem, acc), idx)
+      }
+      res
+    }
+    else z
   }
 
 }
