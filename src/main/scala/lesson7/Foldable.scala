@@ -3,7 +3,7 @@ package lesson7
 import cats.Monoid
 import cats.syntax.semigroup._
 
-trait Foldable[F[_]] {
+/*trait Foldable[F[_]] {
 
   type Endo[A] = A ⇒ A
 
@@ -84,36 +84,48 @@ trait Foldable[F[_]] {
     else z
   }
 
-}
+}*/
 
 trait LazyFoldable[F[_]] {
+
   def foldr[A, B](fa: F[A])(z: B)(f: (A, ⇒ B) ⇒ B): B
-  def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, ⇒ B) ⇒ B): B
+
+  def headOption[A](fa: F[A]): Option[A] = {
+    foldr(fa)(Option.empty[A])((a, _) ⇒ Some(a))
+  }
+
+  def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, B) ⇒ B): B = {
+    val zeroFn: (Int, B) ⇒ B = (_ :Int, v: B) ⇒ v
+    val fn = foldr(fa)(zeroFn) { (a, g) ⇒
+      (i, v) ⇒
+        if(i <= 0) v else g(i - 1, f(a, v))
+    }
+    fn(n, z)
+  }
 }
 
 object LazyFoldableInstances {
 
   implicit def streamFoldable: LazyFoldable[Stream] = new LazyFoldable[Stream] {
-
     def foldr[A, B](fa: Stream[A])(z: B)(f: (A, ⇒ B) ⇒ B): B = {
       if (fa.isEmpty) z
       else f(fa.head, foldr(fa.tail)(z)(f))
     }
-
-    def foldrN[A, B](fa: Stream[A])(n: Int)(z: B)(f: (A, B) ⇒ B): B = {
-      ???
-    }
-
   }
 
 }
 
 object LazyFoldableOps {
+
   implicit class StreamOps[A](s: Stream[A]) {
     def foldr[B](z: B)(f: (A, ⇒ B) ⇒ B)(implicit sf: LazyFoldable[Stream]): B = {
       sf.foldr(s)(z)(f)
     }
+    def foldrN[B](n: Int)(z: B)(f: (A, B) ⇒ B)(implicit sf: LazyFoldable[Stream]): B = {
+      sf.foldrN(s)(n)(z)(f)
+    }
   }
+
 }
 
 object Main extends App {
@@ -122,5 +134,5 @@ object Main extends App {
 
   val s = Stream.from(1)
 
-  /*s.foldr(0)(_ + _)*/
+  println(s.foldrN(1000)(0)(_ + _))
 }
