@@ -3,7 +3,7 @@ package lesson7
 import cats.Monoid
 import cats.syntax.semigroup._
 
-/*trait Foldable[F[_]] {
+trait Foldable[F[_]] {
 
   type Endo[A] = A ⇒ A
 
@@ -41,11 +41,21 @@ import cats.syntax.semigroup._
   }
 
   def foldr[A, B](fa: F[A])(z: B)(f: (A, B) => B): B = {
-    foldl(fa)(z)((b: B, a: A) ⇒ f(a, b))
+    val zeroFn: B ⇒ B = (b: B) ⇒ b
+
+    val fn = foldl(fa)(zeroFn) { (g, a) ⇒
+       b ⇒ g(f(a, b))
+    }
+
+    fn(z)
   }
 
   def foldl[A, B](fa: F[A])(z: B)(f: (B, A) => B): B = {
-    foldr(fa)(z)((a: A, b: B) ⇒ f(b, a))
+    val zeroFn: B ⇒ B = (b: B) ⇒ b
+    val fn = foldr(fa)(zeroFn) { (a, g) ⇒
+      b ⇒ g(f(b, a))
+    }
+    fn(z)
   }
 
 
@@ -73,6 +83,23 @@ import cats.syntax.semigroup._
 
   // Часть 3.
   def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, B) => B): B = {
+
+    val zeroFn: (Int, B) ⇒ B = (_: Int, v: B) ⇒ v
+
+    val fn = foldr(fa)(zeroFn) { (elem, g) =>
+      (i, v) ⇒
+        if(i <= 0)
+          v
+        else
+          g(i - 1, f(elem, v))
+    }
+
+    fn(n, z)
+
+  }
+
+
+  /*def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, B) => B): B = {
     if(n > 0) {
       val zero = (z, length(fa))
       val (res, _) = foldr(fa)(zero) { case (elem, (acc, idx)) ⇒
@@ -82,9 +109,9 @@ import cats.syntax.semigroup._
       res
     }
     else z
-  }
+  }*/
 
-}*/
+}
 
 trait LazyFoldable[F[_]] {
 

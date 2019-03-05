@@ -2,9 +2,9 @@ package lesson8
 
 import cats.Id
 
-trait Funktor[F[_]] { self ⇒
+trait Funktor[F[_]] { /*self ⇒*/
 
-  def lift[A, B](f: A ⇒ B): F[A] ⇒ F[B] = fa ⇒ map(fa)(f)
+  def lift[A, B](f: A ⇒ B): F[A] ⇒ F[B] /*= fa ⇒ map(fa)(f)*/
 
   def map[A, B](fa: F[A])(f: A ⇒ B): F[B] = lift(f)(fa)
 
@@ -20,40 +20,82 @@ trait Funktor[F[_]] { self ⇒
 
   def fproduct[A, B](fa: F[A])(f: A ⇒ B): F[(A, B)] = map(fa)(value ⇒ (value, f(value)))
 
-  def compose[G[_]](implicit G: Funktor[G]): Funktor[Lambda[x ⇒ F[G[x]]]] = new Funktor[Lambda[x ⇒ F[G[x]]]]{
-    override def lift[A, B](f: A ⇒ B): F[G[A]] ⇒ F[G[B]] = self.lift(G.lift(f))
-  }
+  /*
+  def compose[G[_]](implicit G: Funktor[G]): Funktor[λ[α ⇒ F[G[α]]]] = new Funktor[λ[α ⇒ F[G[α]]] ]{
+    def lift[A, B](f: A ⇒ B): F[G[A]] ⇒ F[G[B]] = self.lift(G.lift(f))
+   }
+  */
 
+}
+
+trait ContraFunktor[F[_]] {
+  def contraLift[A, B](f: B ⇒ A): F[A] ⇒ F[B]
+
+  def contraMap[A, B](fa: F[A])(f: B ⇒ A): F[B]
 }
 
 object Funktor {
   implicit val optionFunktor: Funktor[Option] = new Funktor[Option] {
-    override def lift[A, B](f: A ⇒ B): Option[A] ⇒ Option[B] = {
+    def lift[A, B](f: A ⇒ B): Option[A] ⇒ Option[B] = {
       case None ⇒ None
       case Some(a) ⇒ Some(f(a))
     }
   }
 
+  /*λ[α => α]*/
+
   implicit val idFunktor: Funktor[Id] = new Funktor[Id] {
-    override def lift[A, B](f: A ⇒ B): Id[A] ⇒ Id[B] = f
+    def lift[A, B](f: A ⇒ B): Id[A] ⇒ Id[B] = f
   }
 
-  type Const[C, A] = C
-
-  implicit def constFunktor[C]: Funktor[Const[C, ?]] = new Funktor[Const[C, ?]] {
-    override def lift[A, B](f: A ⇒ B): C ⇒ C /*Const[C, ?] ⇒ Const[C, ?]*/ = c ⇒ c //identity
+  implicit val listFunktor: Funktor[List] = new Funktor[List] {
+    def lift[A, B](f: A ⇒ B): List[A] ⇒ List[B] = listA ⇒ listA.map(f)
   }
 
-  implicit def tupleFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[Lambda[x ⇒ (F[x], G[x])]] = ???
+  /*
+    type Const[C, A] = C
 
-  implicit def eitherFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[Lambda[x ⇒ Either[F[x], G[x]]]] = ???
+    implicit def constFunktor[C]: Funktor[Const[C, ?]] = new Funktor[Const[C, ?]] {
+      def lift[A, B](f: A ⇒ B): C ⇒ C /*Const[C, ?] ⇒ Const[C, ?]*/ = c ⇒ c //identity
+    }
+  */
 
-  implicit def functionFunktor[R, F[_]](implicit F: Funktor[F]): Funktor[Lambda[x ⇒ R ⇒ F[x]]] = ???
+  implicit def constFunktor[C]: Funktor[λ[α ⇒ C]] = new Funktor[λ[α ⇒ C]] {
+    def lift[A, B](f: A ⇒ B): C ⇒ C = ???
+  }
 
-  implicit def contraFunktor[F[_], G[_]](implicit F: Contra[F], G: Funktor[G]): Funktor[Lambda[x ⇒ F[x] ⇒ G[x]]] = ???
+  implicit def prodFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[λ[α ⇒ (F[α], G[α])]] = new Funktor[λ[α ⇒ (F[α], G[α])]] {
+    def lift[A, B](f: A ⇒ B): ((F[A], G[A])) ⇒ (F[B], G[B]) = {
+      case (fa, ga) ⇒ (F.map(fa)(f), G.map(ga)(f))
+    }
+  }
+
+  /*
+  implicit def prodFunktor[F[_]: Funktor, G[_]: Funktor]: Funktor[λ[α ⇒ (F[α], G[α])]] = new Funktor[λ[α ⇒ (F[α], G[α])]] {
+    def lift[A, B](f: A ⇒ B): ((F[A], G[A])) ⇒ (F[B], G[B]) = {
+      case (fa, ga) ⇒ (implicitly[Funktor[F]].map(fa)(f), implicitly[Funktor[G]].map(ga)(f))
+    }
+  }
+  */
+
+  implicit def sumFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[λ[α ⇒ Either[F[α], G[α]]]] = new Funktor[λ[α ⇒ Either[F[α], G[α]]]] {
+    def lift[A, B](f: A ⇒ B): Either[F[A], G[A]] ⇒ Either[F[B], G[B]] = {
+      case Right(ga) ⇒ Right(G.map(ga)(f))
+      case Left(fa) ⇒ Left(F.map(fa)(f))
+    }
+  }
+
+  implicit def expFunktor[F[_], G[_]](implicit F: ContraFunktor[F], G: Funktor[G]): Funktor[λ[α ⇒ F[α] ⇒ G[α]]] = new Funktor[λ[α ⇒ F[α] ⇒ G[α]]] {
+    def lift[A, B](f: A ⇒ B): (F[A] ⇒ G[A]) ⇒ F[B] ⇒ G[B] = ???
+  }
+
+  implicit def compFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[λ[α ⇒ F[G[α]]]] = new Funktor[λ[α ⇒ F[G[α]]]] {
+    def lift[A, B](f: A ⇒ B): F[G[A]] ⇒ F[G[B]] = F.lift(G.lift(f))
+  }
+
+  implicit def functionFunktor[R, F[_]](implicit F: Funktor[F]): Funktor[λ[α ⇒ R ⇒ F[α]]] = new Funktor[λ[α ⇒ R ⇒ F[α]]] {
+    def lift[A, B](f: A ⇒ B): (R ⇒ F[A]) ⇒ R ⇒ F[B] = ???
+  }
 
 }
 
-trait Contra[F[_]] {
-  def contraLift[A, B](f: A ⇒ B): F[B] ⇒ F[A]
-}
