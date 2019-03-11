@@ -4,7 +4,7 @@ Functional Programming Club
 
 ### How to run:
 
-Requirements: `Scala 2.17.7, SBT 1.2.6`
+Requirements: `Scala 2.12.7, SBT 1.2.6`
 
 To run tests execute next command inside terminal: `sbt test`
 
@@ -106,3 +106,33 @@ There different type of implicits available as language feature:
 
 See `./src/main/scala/lesson6/task.md`
 
+#### Lessons 7 - Foldable 
+
+See `./src/main/scala/lesson7/task.md`
+
+#### Lessons 8 - Functors
+
+1. Categories: definition
+2. Monoid from the categorical POV
+3. Scal: the category of types & functions
+4. Functor: definition, laws
+5. Functors in Scala
+6. Co-/Contra-variant functors
+7. Connection between type-variance and functors
+8. Functor derivation: const, id, sum, prod, exp, comp
+
+#### Lessons 9 - Functors (cont.)
+
+1. Polymorphic functions as values.
+2. Natural transformations.
+3. Yoneda lemma. Yoneda/Coyoneda embedding.
+4. Free objects. List as a free monoid. Coyoneda as a free functor.
+5. Adjoint functors. Free -| Forgetful adjunction. 
+
+#### Lessons 10 - Applicative Functor
+
+1. Monoidal Category: definition
+2. Monoidal Functor: definition, laws
+3. Applicative Co-/Contra-variant functor via Monoidal in Scala
+4. Applicative validator example
+5. Applicative derivation: const, id, sum, prod, exp, comp

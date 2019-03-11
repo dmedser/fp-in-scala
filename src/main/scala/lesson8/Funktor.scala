@@ -1,10 +1,7 @@
 package lesson8
 
-import cats.Id
-
-trait Funktor[F[_]] { /*self ⇒*/
-
-  def lift[A, B](f: A ⇒ B): F[A] ⇒ F[B] /*= fa ⇒ map(fa)(f)*/
+trait Funktor[F[_]] {
+  def lift[A, B](f: A ⇒ B): F[A] ⇒ F[B]
 
   def map[A, B](fa: F[A])(f: A ⇒ B): F[B] = lift(f)(fa)
 
@@ -12,56 +9,42 @@ trait Funktor[F[_]] { /*self ⇒*/
 
   def as[A, B](fa: F[A], b: B): F[B] = map(fa)(_ ⇒ b)
 
-  def widen[A, B >: A](fa: F[A]): F[B] = map(fa)(value ⇒ value)
+  def widen[A, B >: A](fa: F[A]): F[B] = map(fa)(v ⇒ v: B)
 
-  def tupleLeft[A, B](fa: F[A], b: B): F[(B, A)] = map(fa)(value ⇒ (b, value))
+  def tupleLeft[A, B](fa: F[A], b: B): F[(B, A)] = map(fa)(a ⇒ (b, a))
 
-  def tupleRight[A, B](fa: F[A], b: B): F[(A, B)] = map(fa)(value ⇒ (value, b))
+  def tupleRight[A, B](fa: F[A], b: B): F[(A, B)] = map(fa)(a ⇒ (a, b))
 
-  def fproduct[A, B](fa: F[A])(f: A ⇒ B): F[(A, B)] = map(fa)(value ⇒ (value, f(value)))
-
-  /*
-  def compose[G[_]](implicit G: Funktor[G]): Funktor[λ[α ⇒ F[G[α]]]] = new Funktor[λ[α ⇒ F[G[α]]] ]{
-    def lift[A, B](f: A ⇒ B): F[G[A]] ⇒ F[G[B]] = self.lift(G.lift(f))
-   }
-  */
-
+  def fproduct[A, B](fa: F[A])(f: A ⇒ B): F[(A, B)] = map(fa)(a ⇒ (a, f(a)))
 }
 
 trait ContraFunktor[F[_]] {
-  def contraLift[A, B](f: B ⇒ A): F[A] ⇒ F[B]
+  def contralift[A, B](f: B ⇒ A): F[A] ⇒ F[B]
 
-  def contraMap[A, B](fa: F[A])(f: B ⇒ A): F[B]
+  def contramap[A, B](fa: F[A])(f: B ⇒ A): F[B] = contralift(f)(fa)
 }
 
 object Funktor {
+
+  // concrete functor examples
   implicit val optionFunktor: Funktor[Option] = new Funktor[Option] {
     def lift[A, B](f: A ⇒ B): Option[A] ⇒ Option[B] = {
-      case None ⇒ None
       case Some(a) ⇒ Some(f(a))
+      case None ⇒ None
     }
-  }
-
-  /*λ[α => α]*/
-
-  implicit val idFunktor: Funktor[Id] = new Funktor[Id] {
-    def lift[A, B](f: A ⇒ B): Id[A] ⇒ Id[B] = f
   }
 
   implicit val listFunktor: Funktor[List] = new Funktor[List] {
-    def lift[A, B](f: A ⇒ B): List[A] ⇒ List[B] = listA ⇒ listA.map(f)
+    def lift[A, B](f: A ⇒ B): List[A] ⇒ List[B] = list ⇒ list.map(f)
   }
 
-  /*
-    type Const[C, A] = C
-
-    implicit def constFunktor[C]: Funktor[Const[C, ?]] = new Funktor[Const[C, ?]] {
-      def lift[A, B](f: A ⇒ B): C ⇒ C /*Const[C, ?] ⇒ Const[C, ?]*/ = c ⇒ c //identity
-    }
-  */
+  // universal functor derivation rules
+  implicit val idFunktor: Funktor[λ[α ⇒ α]] = new Funktor[λ[α ⇒ α]] {
+    def lift[A, B](f: A ⇒ B): A ⇒ B = f
+  }
 
   implicit def constFunktor[C]: Funktor[λ[α ⇒ C]] = new Funktor[λ[α ⇒ C]] {
-    def lift[A, B](f: A ⇒ B): C ⇒ C = ???
+    def lift[A, B](f: A ⇒ B): C ⇒ C = c ⇒ c
   }
 
   implicit def prodFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[λ[α ⇒ (F[α], G[α])]] = new Funktor[λ[α ⇒ (F[α], G[α])]] {
@@ -70,15 +53,7 @@ object Funktor {
     }
   }
 
-  /*
-  implicit def prodFunktor[F[_]: Funktor, G[_]: Funktor]: Funktor[λ[α ⇒ (F[α], G[α])]] = new Funktor[λ[α ⇒ (F[α], G[α])]] {
-    def lift[A, B](f: A ⇒ B): ((F[A], G[A])) ⇒ (F[B], G[B]) = {
-      case (fa, ga) ⇒ (implicitly[Funktor[F]].map(fa)(f), implicitly[Funktor[G]].map(ga)(f))
-    }
-  }
-  */
-
-  implicit def sumFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[λ[α ⇒ Either[F[α], G[α]]]] = new Funktor[λ[α ⇒ Either[F[α], G[α]]]] {
+  implicit def sumFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[λ[α ⇒ F[α] Either G[α]]] = new Funktor[λ[α ⇒ F[α] Either G[α]]] {
     def lift[A, B](f: A ⇒ B): Either[F[A], G[A]] ⇒ Either[F[B], G[B]] = {
       case Right(ga) ⇒ Right(G.map(ga)(f))
       case Left(fa) ⇒ Left(F.map(fa)(f))
@@ -86,7 +61,14 @@ object Funktor {
   }
 
   implicit def expFunktor[F[_], G[_]](implicit F: ContraFunktor[F], G: Funktor[G]): Funktor[λ[α ⇒ F[α] ⇒ G[α]]] = new Funktor[λ[α ⇒ F[α] ⇒ G[α]]] {
-    def lift[A, B](f: A ⇒ B): (F[A] ⇒ G[A]) ⇒ F[B] ⇒ G[B] = ???
+    def lift[A, B](f: A ⇒ B): (F[A] ⇒ G[A]) ⇒ F[B] ⇒ G[B] = {
+      faga ⇒ fb ⇒ {
+        val fa = F.contramap(fb)(f)
+        val ga = faga(fa)
+        val gb = G.map(ga)(f)
+        gb
+      }
+    }
   }
 
   implicit def compFunktor[F[_], G[_]](implicit F: Funktor[F], G: Funktor[G]): Funktor[λ[α ⇒ F[G[α]]]] = new Funktor[λ[α ⇒ F[G[α]]]] {
@@ -94,8 +76,17 @@ object Funktor {
   }
 
   implicit def functionFunktor[R, F[_]](implicit F: Funktor[F]): Funktor[λ[α ⇒ R ⇒ F[α]]] = new Funktor[λ[α ⇒ R ⇒ F[α]]] {
-    def lift[A, B](f: A ⇒ B): (R ⇒ F[A]) ⇒ R ⇒ F[B] = ???
+    def lift[A, B](f: A ⇒ B): (R ⇒ F[A]) ⇒ R ⇒ F[B] = rfa ⇒ r ⇒ {
+      val fa = rfa(r)
+      val fb = F.map(fa)(f)
+      fb
+    }
   }
 
 }
 
+object ContraFunktor {
+
+  // similar rules for contravariant functors
+
+}

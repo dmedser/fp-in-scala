@@ -24,32 +24,36 @@ trait Foldable[F[_]] {
 
 
   // Часть 1.
-  def foldMap[A, C: Monoid](fa: F[A])(f: A => C): C = {
-    foldr(fa)(implicitly[Monoid[C]].empty) { case (a, c) ⇒ f(a) |+| c }
+  // foldMap через foldr
+  def foldMap[A, M: Monoid](fa: F[A])(f: A => M): M = {
+    foldr(fa)(implicitly[Monoid[M]].empty) { case (a, m) ⇒ f(a) |+| m }
   }
 
+  // foldMap через foldl
   def foldMap[A, C: Monoid](fa: F[A])(f: A => C): C = {
     foldl(fa)(implicitly[Monoid[C]].empty) { case (c, a) ⇒ c |+| f(a) }
   }
 
+  // foldr через foldMap
   def foldr[A, B](fa: F[A])(z: B)(f: (A, B) => B): B = {
     foldMap(fa) { a: A ⇒ (b: B) ⇒ f(a, b) }(endoMonoid(_ compose _)).apply(z)
   }
 
+  // foldl через foldMap
   def foldl[A, B](fa: F[A])(z: B)(f: (B, A) => B): B = {
     foldMap(fa) { a: A ⇒ (b: B) ⇒ f(b, a) }(endoMonoid(_ andThen _)).apply(z)
   }
 
+  // foldr через foldl
   def foldr[A, B](fa: F[A])(z: B)(f: (A, B) => B): B = {
     val zeroFn: B ⇒ B = (b: B) ⇒ b
-
     val fn = foldl(fa)(zeroFn) { (g, a) ⇒
-       b ⇒ g(f(a, b))
+      b ⇒ g(f(a, b))
     }
-
     fn(z)
   }
 
+  // foldl через foldr
   def foldl[A, B](fa: F[A])(z: B)(f: (B, A) => B): B = {
     val zeroFn: B ⇒ B = (b: B) ⇒ b
     val fn = foldr(fa)(zeroFn) { (a, g) ⇒
@@ -61,15 +65,15 @@ trait Foldable[F[_]] {
 
   // Часть 2.
   def headOption[A](fa: F[A]): Option[A] = {
-    foldr(fa)(Option.empty[A])((a, b) ⇒ Some(a))
+    foldr(fa)(Option.empty[A])((a, _) ⇒ Some(a))
   }
 
   def lastOption[A](fa: F[A]): Option[A] = {
-    foldl(fa)(Option.empty[A])((a, b) ⇒ Some(b))
+    foldl(fa)(Option.empty[A])((_, b) ⇒ Some(b))
   }
 
   def length[A](fa: F[A]): Int = {
-    foldl(fa)(0)((a, b) ⇒ a + 1)
+    foldl(fa)(0)((a, _) ⇒ a + 1)
   }
 
   def exists[A](fa: F[A])(p: A => Boolean): Boolean = {
@@ -84,23 +88,16 @@ trait Foldable[F[_]] {
   // Часть 3.
   def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, B) => B): B = {
 
-    val zeroFn: (Int, B) ⇒ B = (_: Int, v: B) ⇒ v
+    val zeroFn: (Int, B) ⇒ B = (_: Int, b: B) ⇒ b
 
-    val fn = foldr(fa)(zeroFn) { (elem, g) =>
-      (i, v) ⇒
-        if(i <= 0)
-          v
-        else
-          g(i - 1, f(elem, v))
+    val fn = foldr(fa)(zeroFn) { (a, g) ⇒
+      (i, b) ⇒
+        if(i <= 0) b else g(i - 1, f(a, b))
     }
 
     fn(n, z)
 
-  }
-
-
-  /*def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, B) => B): B = {
-    if(n > 0) {
+    /*if(n > 0) {
       val zero = (z, length(fa))
       val (res, _) = foldr(fa)(zero) { case (elem, (acc, idx)) ⇒
         if(idx > n) (acc, idx - 1)
@@ -108,42 +105,45 @@ trait Foldable[F[_]] {
       }
       res
     }
-    else z
-  }*/
+    else z*/
+  }
 
 }
+
+
+
+
 
 trait LazyFoldable[F[_]] {
 
   def foldr[A, B](fa: F[A])(z: B)(f: (A, ⇒ B) ⇒ B): B
 
-  def headOption[A](fa: F[A]): Option[A] = {
+  def headOption[A, B](fa: F[A]): Option[A] =
     foldr(fa)(Option.empty[A])((a, _) ⇒ Some(a))
-  }
 
   def foldrN[A, B](fa: F[A])(n: Int)(z: B)(f: (A, B) ⇒ B): B = {
-    val zeroFn: (Int, B) ⇒ B = (_ :Int, v: B) ⇒ v
+
+    val zeroFn: (Int, B) ⇒ B = (_: Int, b: B) ⇒ b
+
     val fn = foldr(fa)(zeroFn) { (a, g) ⇒
-      (i, v) ⇒
-        if(i <= 0) v else g(i - 1, f(a, v))
+      (i, b) ⇒
+        if (i <= 0) b else g(i - 1, f(a, b))
     }
     fn(n, z)
   }
+
 }
 
 object LazyFoldableInstances {
-
   implicit def streamFoldable: LazyFoldable[Stream] = new LazyFoldable[Stream] {
     def foldr[A, B](fa: Stream[A])(z: B)(f: (A, ⇒ B) ⇒ B): B = {
       if (fa.isEmpty) z
       else f(fa.head, foldr(fa.tail)(z)(f))
     }
   }
-
 }
 
 object LazyFoldableOps {
-
   implicit class StreamOps[A](s: Stream[A]) {
     def foldr[B](z: B)(f: (A, ⇒ B) ⇒ B)(implicit sf: LazyFoldable[Stream]): B = {
       sf.foldr(s)(z)(f)
@@ -152,8 +152,8 @@ object LazyFoldableOps {
       sf.foldrN(s)(n)(z)(f)
     }
   }
-
 }
+
 
 object Main extends App {
   import LazyFoldableInstances._
