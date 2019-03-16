@@ -1,5 +1,7 @@
 package lesson8
 
+import scala.language.higherKinds
+
 trait Funktor[F[_]] {
   def lift[A, B](f: A ⇒ B): F[A] ⇒ F[B]
 
@@ -65,8 +67,7 @@ object Funktor {
       faga ⇒ fb ⇒ {
         val fa = F.contramap(fb)(f)
         val ga = faga(fa)
-        val gb = G.map(ga)(f)
-        gb
+        G.map(ga)(f)
       }
     }
   }
@@ -78,15 +79,50 @@ object Funktor {
   implicit def functionFunktor[R, F[_]](implicit F: Funktor[F]): Funktor[λ[α ⇒ R ⇒ F[α]]] = new Funktor[λ[α ⇒ R ⇒ F[α]]] {
     def lift[A, B](f: A ⇒ B): (R ⇒ F[A]) ⇒ R ⇒ F[B] = rfa ⇒ r ⇒ {
       val fa = rfa(r)
-      val fb = F.map(fa)(f)
-      fb
+      F.map(fa)(f)
     }
   }
-
 }
+
 
 object ContraFunktor {
 
-  // similar rules for contravariant functors
+  implicit def constContraFunktor[C]: ContraFunktor[λ[α ⇒ C]] = new ContraFunktor[λ[α ⇒ C]] {
+    def contralift[A, B](f: B ⇒ A): C ⇒ C = c ⇒ c
+  }
+
+  implicit def prodContraFunktor[F[_], G[_]](implicit F: ContraFunktor[F], G: ContraFunktor[G]): ContraFunktor[λ[α ⇒ (F[α], G[α])]] = new ContraFunktor[λ[α ⇒ (F[α], G[α])]] {
+    def contralift[A, B](f: B ⇒ A): ((F[A], G[A])) ⇒ (F[B], G[B]) = {
+      case (fa, ga) ⇒ (F.contramap(fa)(f), G.contramap(ga)(f))
+    }
+  }
+
+  implicit def sumContraFunktor[F[_], G[_]](implicit F: ContraFunktor[F], G: ContraFunktor[G]): ContraFunktor[λ[α ⇒ F[α] Either G[α]]] = new ContraFunktor[λ[α ⇒ F[α] Either G[α]]] {
+    def contralift[A, B](f: B ⇒ A): Either[F[A], G[A]] ⇒ Either[F[B], G[B]] = {
+      case Right(ga) ⇒ Right(G.contramap(ga)(f))
+      case Left(fa) ⇒ Left(F.contramap(fa)(f))
+    }
+  }
+
+  implicit def expContraFunktor[F[_], G[_]](implicit F: Funktor[F], G: ContraFunktor[G]): ContraFunktor[λ[α ⇒ F[α] ⇒ G[α]]] = new ContraFunktor[λ[α ⇒ F[α] ⇒ G[α]]] {
+    def contralift[A, B](f: B ⇒ A): (F[A] ⇒ G[A]) ⇒ F[B] ⇒ G[B] = faga ⇒ {
+      fb ⇒ {
+        val fa = F.map(fb)(f)
+        val ga = faga(fa)
+        G.contramap(ga)(f)
+      }
+    }
+  }
+
+  implicit def compContraFunktor[F[_], G[_]](implicit F: Funktor[F], G: ContraFunktor[G]): ContraFunktor[λ[α ⇒ F[G[α]]]] = new ContraFunktor[λ[α ⇒ F[G[α]]]] {
+    def contralift[A, B](f: B ⇒ A): F[G[A]] ⇒ F[G[B]] = fga ⇒ F.map(fga)(ga ⇒ G.contramap(ga)(f))
+  }
+
+  implicit def functionContraFunktor[R, F[_]](implicit F: ContraFunktor[F]): ContraFunktor[λ[α ⇒ R ⇒ F[α]]] = new ContraFunktor[λ[α ⇒ R ⇒ F[α]]] {
+    def contralift[A, B](f: B ⇒ A): (R ⇒ F[A]) ⇒ R ⇒ F[B] = rfa ⇒ r ⇒ {
+      val fa = rfa(r)
+      F.contramap(fa)(f)
+    }
+  }
 
 }
