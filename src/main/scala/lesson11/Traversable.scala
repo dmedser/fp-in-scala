@@ -2,7 +2,6 @@ package lesson11
 
 import cats.{Apply, Monoid}
 import lesson10.Applikative
-import lesson10.Applikative._
 import lesson8.Funktor
 
 /*
@@ -42,7 +41,7 @@ object Traversable {
   // concrete functor examples
   implicit val optionTraversable: Traversable[Option] = new Traversable[Option] {
     def traverse[G[_] : Applikative, A, B](fa: Option[A])(f: A ⇒ G[B]): G[Option[B]] =
-      fa.fold(implicitly[Applikative[G]].pure(None))(a ⇒ implicitly[Applikative[G]].map(f(a))(Some(_)))
+      fa.fold(Applikative[G].pure(Option.empty[B]))(a ⇒ Applikative[G].map(f(a))(Some(_)))
 
   }
 
@@ -54,7 +53,7 @@ object Traversable {
   }
 
   implicit def constTraversable[C]: Traversable[λ[α => C]] = new Traversable[λ[α => C]] {
-    def traverse[G[_] : Applikative, A, B](fa: C)(f: A ⇒ G[B]): G[C] = implicitly[Applikative[G]].pure(fa)
+    def traverse[G[_] : Applikative, A, B](fa: C)(f: A ⇒ G[B]): G[C] = Applikative[G].pure(fa)
   }
 
   implicit def prodTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => (F[α], G[α])]] = ???
@@ -112,7 +111,7 @@ object Distributive {
   // representable functor is such that: F[A] <-> R => A
   implicit def reprDistributive[R]: Distributive[R => ?] = new Distributive[R => ?] {
     def distribute[G[_] : Funktor, A, B](ga: G[A])(f: A ⇒ R ⇒ B): R ⇒ G[B] =
-      r ⇒ implicitly[Funktor[G]].map(ga)(a ⇒ f(a)(r))
+      r ⇒ Funktor[G].map(ga)(a ⇒ f(a)(r))
 
     def lift[A, B](f: A ⇒ B): (R ⇒ A) ⇒ R ⇒ B = ra ⇒ r ⇒ f(ra(r))
   }

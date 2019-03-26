@@ -28,6 +28,8 @@ trait ContraFunktor[F[_]] {
 
 object Funktor {
 
+  def apply[F[_]](implicit ev: Funktor[F]): Funktor[F] = ev
+
   // concrete functor examples
   implicit val optionFunktor: Funktor[Option] = new Funktor[Option] {
     def lift[A, B](f: A ⇒ B): Option[A] ⇒ Option[B] = {
