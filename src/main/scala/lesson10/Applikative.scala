@@ -18,7 +18,7 @@ trait Applikative[F[_]] extends Funktor[F] with Manoidal[F] {
 }
 
 
-object Aplikative {
+object Applikative {
 
   // universal functor derivation rules
   implicit val idApplikative: Applikative[λ[α ⇒ α]] = new Applikative[λ[α ⇒ α]] {
