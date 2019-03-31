@@ -30,3 +30,14 @@ libraryDependencies ++= {
 
   compile ++ test.map(_ % Test) ++ compilerPlugins
 }
+
+scalacOptions ++= Seq(
+  "-encoding", "utf8",
+  "-Xfatal-warnings",
+  "-deprecation",
+  "-unchecked",
+  "-language:implicitConversions",
+  "-language:higherKinds",
+  "-language:existentials",
+  "-language:postfixOps"
+)

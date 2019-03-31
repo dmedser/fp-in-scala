@@ -69,8 +69,8 @@ sealed trait MyLinkedList[+A] {
   //def init: List[A] = ???
   def init: MyLinkedList[A] = {
     def go(res: MyLinkedList[A]): MyLinkedList[A] = res match {
-      case Cons(head, tail) if tail != Nil ⇒ Cons(head, go(tail))
-      case _ ⇒ Nil
+      case Cons(head, tail) if tail != Nil => Cons(head, go(tail))
+      case _ => Nil
     }
     go(this)
   }
@@ -81,8 +81,8 @@ sealed trait MyLinkedList[+A] {
     */
   def foldLeft[B](z: B)(f: (B, A) => B): B = {
     def go(res: B, ys: MyLinkedList[A]): B = ys match {
-      case Cons(head, tail) ⇒ go(f(res, head), tail)
-      case _ ⇒ res
+      case Cons(head, tail) => go(f(res, head), tail)
+      case _ => res
     }
     go(z, this)
   }
@@ -92,8 +92,8 @@ sealed trait MyLinkedList[+A] {
     */
   def foldRight[B](z: B)(f: (A, B) => B): B = {
     def go(res: B, ys: MyLinkedList[A]): B = ys match {
-      case Cons(head, tail) ⇒ f(head, go(res, tail))
-      case _ ⇒ res
+      case Cons(head, tail) => f(head, go(res, tail))
+      case _ => res
     }
     go(z, this)
   }
@@ -104,7 +104,7 @@ sealed trait MyLinkedList[+A] {
     * @return length of list
     */
   def length: Int = {
-    this.foldRight(0)((_, acc) ⇒ acc + 1)
+    this.foldRight(0)((_, acc) => acc + 1)
   }
 
   /**
@@ -114,8 +114,8 @@ sealed trait MyLinkedList[+A] {
   //def reverse: List[A] = ???
   def reverse: MyLinkedList[A] = {
     def go(l: MyLinkedList[A], r: MyLinkedList[A]): MyLinkedList[A] = l match {
-      case Cons(head, tail) ⇒ go(tail, Cons(head, r))
-      case _ ⇒ r
+      case Cons(head, tail) => go(tail, Cons(head, r))
+      case _ => r
     }
     go(this, Nil)
   }
@@ -128,9 +128,9 @@ sealed trait MyLinkedList[+A] {
     */
   //def flatten: List[A] = ???
   def flatten: MyLinkedList[A] = {
-    this.foldLeft(MyLinkedList[A]()){(acc, elem) ⇒ elem match {
-      case list: MyLinkedList[A] ⇒ acc append list
-      case value ⇒ acc append Cons(value, Nil)
+    this.foldLeft(MyLinkedList[A]()){(acc, elem) => elem match {
+      case list: MyLinkedList[A] => acc append list
+      case value => acc append Cons(value, Nil)
     }}
   }
 
