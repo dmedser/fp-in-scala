@@ -25,12 +25,12 @@ trait Foldable[F[_]] {
 
   // Часть 1.
   // foldMap через foldr
-  def foldMap[A, M: Monoid](fa: F[A])(f: A => M): M = {
+  def foldMap[A, M : Monoid](fa: F[A])(f: A => M): M = {
     foldr(fa)(implicitly[Monoid[M]].empty) { case (a, m) => f(a) |+| m }
   }
 
   // foldMap через foldl
-  def foldMap[A, C: Monoid](fa: F[A])(f: A => C): C = {
+  def foldMap[A, C : Monoid](fa: F[A])(f: A => C): C = {
     foldl(fa)(implicitly[Monoid[C]].empty) { case (c, a) => c |+| f(a) }
   }
 

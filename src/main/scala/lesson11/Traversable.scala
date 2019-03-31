@@ -20,15 +20,15 @@ trait Traversable[F[_]] /* extends Functor[F] with Foldable[F] */ {
 
   def traverse[G[_] : Applikative, A, B](fa: F[A])(f: A => G[B]): G[F[B]]
 
-  def sequence[G[_] : Applikative, A](fga: F[G[A]]): G[F[A]] = ???
+  def sequence[G[_] : Applikative, A](fga: F[G[A]]): G[F[A]] = traverse(fga)(identity[G[A]])
 
   // Functor and Foldable can be derived via Traversable
-  def map[A, B](fa: F[A])(f: A => B): F[B] = ???
-  def foldMap[A, B : Monoid](fa: F[A])(f: A => B): B = ???
+  def map[A, B](fa: F[A])(f: A => B): F[B] = traverse[λ[α => α], A, B](fa)(f)
+
+  def foldMap[A, B: Monoid](fa: F[A])(f: A => B): B = traverse[λ[α => B], A, B](fa)(f)
 
   // traverse can be expressed via map & sequence
-  //def traverse[G[_] : Applikative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] =
-  //  sequence(map(fa)(f))
+  //def traverse[G[_] : Applikative, A, B](fa: F[A])(f: A => G[B]): G[F[B]] = sequence(map(fa)(f))
 
   // laws
   // 1) identity: fa.traverse(G.pure) == fa.pure[G]
@@ -38,23 +38,34 @@ trait Traversable[F[_]] /* extends Functor[F] with Foldable[F] */ {
 object Traversable {
   def apply[F[_]](implicit ev: Traversable[F]): Traversable[F] = ev
 
-  // concrete functor examples
+  // concrete traversable examples
   implicit val optionTraversable: Traversable[Option] = new Traversable[Option] {
-    def traverse[G[_] : Applikative, A, B](fa: Option[A])(f: A => G[B]): G[Option[B]] = ???
+    def traverse[G[_] : Applikative, A, B](option: Option[A])(f: A => G[B]): G[Option[B]] =
+      option.fold(Applikative[G].pure(Option.empty[B]))(a => Applikative[G].pure(f(a)))
   }
 
-  implicit val listTraversable: Traversable[List] = ???
+  implicit val listTraversable: Traversable[List] = new Traversable[List] {
+    def traverse[G[_] : Applikative, A, B](list: List[A])(f: A => G[B]): G[List[B]] = list match {
+      case Nil => Applikative[G].pure(List.empty[B])
+      case head :: tail =>
+        val l = Applikative[G].map(f(head))(b => List(b))
+        val r = traverse(tail)(f)
+        Applikative[G].map2(l, r)(_ :: _)
+    }
+  }
 
   // universal traversable derivation rules
   implicit val idTraversable: Traversable[λ[α => α]] = new Traversable[λ[α => α]] {
-    def traverse[G[_] : Applikative, A, B](fa: A)(f: A => G[B]): G[B] = ???
+    def traverse[G[_] : Applikative, A, B](a: A)(f: A => G[B]): G[B] = Applikative[G].pure(f(a))
   }
 
   implicit def constTraversable[C]: Traversable[λ[α => C]] = new Traversable[λ[α => C]] {
-    def traverse[G[_] : Applikative, A, B](fa: C)(f: A => G[B]): G[C] = ???
+    def traverse[G[_] : Applikative, A, B](c: C)(f: A => G[B]): G[C] = Applikative[G].pure(c)
   }
 
-  implicit def prodTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => (F[α], G[α])]] = ???
+  implicit def prodTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => (F[α], G[α])]] = new Traversable[λ[α => (F[α], G[α])]] {
+    def traverse[G[_] : Applikative, A, B](faga: (F[A], G[A]))(f: A => G[B]): G[(F[B], G[B])] = ???
+  }
 
   implicit def sumTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => F[α] Either G[α]]] = ???
 
@@ -114,6 +125,7 @@ object Distributive {
   }
 
   implicit def prodDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => (F[α], G[α])]] = ???
+
   implicit def compDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => F[G[α]]]] = ???
 
   // what about sum?
