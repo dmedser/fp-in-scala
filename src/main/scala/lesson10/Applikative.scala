@@ -2,7 +2,6 @@ package lesson10
 
 import cats.Monoid
 import lesson8.{ContraFunktor, Funktor}
-import scala.language.higherKinds
 
 trait Manoidal[F[_]] {
   def unit: F[Unit]

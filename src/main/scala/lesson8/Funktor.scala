@@ -1,7 +1,5 @@
 package lesson8
 
-import scala.language.higherKinds
-
 trait Funktor[F[_]] {
   def lift[A, B](f: A => B): F[A] => F[B]
 
