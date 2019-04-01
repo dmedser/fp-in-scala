@@ -47,10 +47,7 @@ object Traversable {
   implicit val listTraversable: Traversable[List] = new Traversable[List] {
     def traverse[G[_] : Applikative, A, B](list: List[A])(f: A => G[B]): G[List[B]] = list match {
       case Nil => Applikative[G].pure(List.empty[B])
-      case head :: tail =>
-        val l = Applikative[G].map(f(head))(b => List(b))
-        val r = traverse(tail)(f)
-        Applikative[G].map2(l, r)(_ :: _)
+      case head :: tail => Applikative[G].map2(f(head), traverse(tail)(f))(_ :: _)
     }
   }
 
@@ -64,7 +61,9 @@ object Traversable {
   }
 
   implicit def prodTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => (F[α], G[α])]] = new Traversable[λ[α => (F[α], G[α])]] {
-    def traverse[G[_] : Applikative, A, B](faga: (F[A], G[A]))(f: A => G[B]): G[(F[B], G[B])] = ???
+    def traverse[G[_] : Applikative, A, B](faga: (F[A], G[A]))(f: A => G[B]): G[(F[B], G[B])] = {
+      ???
+    }
   }
 
   implicit def sumTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => F[α] Either G[α]]] = ???
