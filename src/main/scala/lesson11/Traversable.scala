@@ -3,6 +3,7 @@ package lesson11
 import cats.{Apply, Monoid}
 import lesson10.Applikative
 import lesson8.Funktor
+import cats.syntax.either._
 
 /*
 @runarorama
@@ -61,24 +62,39 @@ object Traversable {
   }
 
   implicit def prodTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => (F[α], G[α])]] = new Traversable[λ[α => (F[α], G[α])]] {
-    def traverse[G[_] : Applikative, A, B](faga: (F[A], G[A]))(f: A => G[B]): G[(F[B], G[B])] = {
-      ???
+    def traverse[H[_] : Applikative, A, B](faga: (F[A], G[A]))(f: A => H[B]): H[(F[B], G[B])] = {
+      val fa = faga._1
+      val ga = faga._2
+      val gfb = Traversable[F].traverse(fa)(f)
+      val ggb = Traversable[G].traverse(ga)(f)
+      Applikative[H].map2(gfb, ggb)((fb, gb) => (fb, gb))
     }
   }
 
-  implicit def sumTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => F[α] Either G[α]]] = ???
+  implicit def sumTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => F[α] Either G[α]]] = new Traversable[λ[α => F[α] Either G[α]]] {
+    def traverse[H[_] : Applikative, A, B](faga: F[A] Either G[A])(f: A => H[B]): H[F[B] Either G[B]] =
+      faga.fold(
+        fa => Applikative[H].map(Traversable[F].traverse(fa)(f))(_.asLeft[G[B]]),
+        ga => Applikative[H].map(Traversable[G].traverse(ga)(f))(_.asRight[F[B]])
+      )
+  }
 
-  implicit def compTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => F[G[α]]]] = ???
+  implicit def compTraversable[F[_] : Traversable, G[_] : Traversable]: Traversable[λ[α => F[G[α]]]] = new Traversable[λ[α => F[G[α]]]] {
+    def traverse[H[_] : Applikative, A, B](fga: F[G[A]])(f: A => H[B]): H[F[G[B]]] =
+      Traversable[F].traverse(fga)(ga => Traversable[G].traverse(ga)(f))
+  }
 
   // Hence, all finite polynomials are traversable
 
   // What about exponentials?
   implicit def simplestExpTraversable[R]: Traversable[R => ?] = new Traversable[R => ?] {
-    def traverse[G[_] : Applikative, A, B](fa: R => A)(f: A => G[B]): G[R => B] = ???
+    def traverse[G[_] : Applikative, A, B](ra: R => A)(f: A => G[B]): G[R => B] = ???
   }
 
   // And infinite structures?
-  implicit val streamTraversable: Traversable[Stream] = ???
+  implicit val streamTraversable: Traversable[Stream] = new Traversable[Stream] {
+    def traverse[G[_] : Applikative, A, B](fa: Stream[A])(f: A => G[B]): G[Stream[B]] = ???
+  }
 
 }
 
@@ -102,13 +118,13 @@ trait Distributive[F[_]] extends Funktor[F] {
   def distribute[G[_] : Funktor, A, B](ga: G[A])(f: A => F[B]): F[G[B]]
 
   // dual of sequence
-  def cosequence[G[_] : Funktor, A](gfa: G[F[A]]): F[G[A]] = ???
+  def cosequence[G[_] : Funktor, A](gfa: G[F[A]]): F[G[A]] = distribute(gfa)(identity[F[A]])
 
   // dual of traverse
-  def cotraverse[G[_] : Funktor, A, B](gfb: G[F[B]])(f: G[B] => A): F[A] = ???
+  def cotraverse[G[_] : Funktor, A, B](gfb: G[F[B]])(f: G[B] => A): F[A] = Funktor[F].map(cosequence(gfb))(f)
 
   // distribute can be expressed via map & cosequence
-  // def distribute[G[_] : Funktor, A, B](fa: G[A])(f: A => F[B]): F[G[B]] = ???
+  //def distribute[G[_] : Funktor, A, B](ga: G[A])(f: A => F[B]): F[G[B]] = cosequence(Funktor[G].map(ga)(f))
 
 }
 
@@ -118,12 +134,24 @@ object Distributive {
   // All representable functors are distributive
   // representable functor is such that: F[A] <-> R => A
   implicit def reprDistributive[R]: Distributive[R => ?] = new Distributive[R => ?] {
-    def distribute[G[_] : Funktor, A, B](ga: G[A])(f: A => R => B): R => G[B] = ???
+    def distribute[G[_] : Funktor, A, B](ga: G[A])(f: A => R => B): R => G[B] = r => Funktor[G].map(ga)(a => f(a)(r))
 
-    def lift[A, B](f: A => B): (R => A) => R => B = ???
+    def lift[A, B](f: A => B): (R => A) => R => B = ra => r => f(ra(r))
   }
 
-  implicit def prodDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => (F[α], G[α])]] = ???
+  implicit def prodDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => (F[α], G[α])]] = new Distributive[λ[α => (F[α], G[α])]] {
+    def distribute[H[_] : Funktor, A, B](ha: H[A])(f: A => (F[B], G[B])): (F[H[B]], G[H[B]]) = {
+      val hfbgb = Funktor[H].map(ha)(f)
+      val hfb = Funktor[H].map(hfbgb)(_._1)
+      val hgb = Funktor[H].map(hfbgb)(_._2)
+      (Distributive[F].cosequence[H, B](hfb), Distributive[G].cosequence[H, B](hgb)) // TODO заменить map & cosequence на distribute
+    }
+
+    def lift[A, B](f: A => B): ((F[A], G[A])) => (F[B], G[B]) = {
+      case (fa, ga) =>
+        (Distributive[F].map(fa)(f), Distributive[G].map(ga)(f))
+    }
+  }
 
   implicit def compDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => F[G[α]]]] = ???
 
