@@ -140,24 +140,34 @@ object Distributive {
   }
 
   implicit def prodDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => (F[α], G[α])]] = new Distributive[λ[α => (F[α], G[α])]] {
-    def distribute[H[_] : Funktor, A, B](ha: H[A])(f: A => (F[B], G[B])): (F[H[B]], G[H[B]]) = {
-      val hfbgb = Funktor[H].map(ha)(f)
-      val hfb = Funktor[H].map(hfbgb)(_._1)
-      val hgb = Funktor[H].map(hfbgb)(_._2)
-      (Distributive[F].cosequence[H, B](hfb), Distributive[G].cosequence[H, B](hgb)) // TODO заменить map & cosequence на distribute
-    }
+    def distribute[H[_] : Funktor, A, B](ha: H[A])(f: A => (F[B], G[B])): (F[H[B]], G[H[B]]) =
+      (
+        Distributive[F].distribute(ha)(f andThen { case (fb, _) => fb }),
+        Distributive[G].distribute(ha)(f andThen { case (_, gb) => gb })
+      )
+
 
     def lift[A, B](f: A => B): ((F[A], G[A])) => (F[B], G[B]) = {
-      case (fa, ga) =>
-        (Distributive[F].map(fa)(f), Distributive[G].map(ga)(f))
+      case (fa, ga) => (Distributive[F].map(fa)(f), Distributive[G].map(ga)(f))
     }
   }
 
-  implicit def compDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => F[G[α]]]] = ???
+  implicit def compDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => F[G[α]]]] = new Distributive[λ[α => F[G[α]]]] {
+    def distribute[H[_] : Funktor, A, B](ha: H[A])(f: A => F[G[B]]): F[G[H[B]]] =
+      Distributive[F].cosequence(Funktor[H].map(ha)(f))
+
+    def lift[A, B](f: A => B): F[G[A]] => F[G[B]] = fga => Distributive[F].map(fga)(Distributive[G].lift(f))
+  }
 
   // what about sum?
-  implicit def sumDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => F[α] Either G[α]]] = ???
+  implicit def sumDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => F[α] Either G[α]]] = new Distributive[λ[α => Either[F[α], G[α]]]] {
+    def distribute[H[_] : Funktor, A, B](ha: H[A])(f: A => Either[F[B], G[B]]): Either[F[H[B]], G[H[B]]] = ???
 
+    def lift[A, B](f: A => B): Either[F[A], G[A]] => Either[F[B], G[B]] = {
+      case Left(fa) => Distributive[F].map(fa)(f).asLeft[G[B]]
+      case Right(ga) => Distributive[G].map(ga)(f).asRight[F[B]]
+    }
+  }
 }
 
 
