@@ -14,6 +14,11 @@ trait Applikative[F[_]] extends Funktor[F] with Manoidal[F] {
   def pure[A](a: A): F[A] = as(unit, a)
 
   def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = map(product(fa, fb))(ab => f(ab))
+
+  def map3[A, B, C, D](fa: F[A], fb: F[B], fc: F[C])(f: (A, B, C) => D): F[D] = {
+    val fab = map(product(fa, fb))(identity[(A, B)])
+    map(product(fab, fc)) { case ((a, b), c) => f((a, b, c)) }
+  }
 }
 
 
