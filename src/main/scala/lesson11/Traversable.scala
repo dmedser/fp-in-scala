@@ -202,7 +202,8 @@ object Tree {
   }
 
   implicit val treeBFSTraversable: Traversable[Tree] = new Traversable[Tree] {
-    def traverse[G[_] : Applikative, A, B](tree: Tree[A])(f: A => G[B]): G[Tree[B]] = ???
-
+    def traverse[G[_] : Applikative, A, B](tree: Tree[A])(f: A => G[B]): G[Tree[B]] = {
+      ???
+    }
   }
 }

@@ -123,12 +123,6 @@ object Applikative {
   }
 
 
-  // TODO
-  implicit def freemApplikative[F[_] : Funktor]: Applikative[λ[α => Free[F, α]]] = new Applikative[λ[α => Free[F, α]]] {
-    def unit: Free[F, Unit] = ???
-    def product[A, B](fa: Free[F, A], fb: Free[F, B]): Free[F, (A, B)] = ???
-    def lift[A, B](f: A => B): Free[F, A] => Free[F, B] = ???
-  }
 
 
   implicit def someExpApplikative[F[_] : ContrApplikative]: Applikative[λ[α => F[α] => α]] = new Applikative[λ[α => F[α] => α]] {
@@ -222,4 +216,24 @@ object ContrApplikative {
   }
 }
 
+
 case class Free[F[_], A](unwrap: A Either F[Free[F, A]])
+
+object Free {
+  implicit def freeApplikative[F[_]](implicit F: Applikative[F]): Applikative[λ[α => Free[F, α]]] = new Applikative[λ[α => Free[F, α]]] {
+    def unit: Free[F, Unit] = Free(Left(()))
+
+    def product[A, B](fa: Free[F, A], fb: Free[F, B]): Free[F, (A, B)] = (fa, fb) match {
+      case (Free(Left(a)), Free(Left(b))) ⇒ Free(Left((a, b)))
+      case (Free(Left(a)), Free(Right(ffreeb))) ⇒ Free(Right(F.map(ffreeb)(freeb ⇒ map(freeb)(b ⇒ (a, b)))))
+      case (Free(Right(ffreea)), Free(Left(b))) ⇒ Free(Right(F.map(ffreea)(freea ⇒ map(freea)(a ⇒ (a, b)))))
+      case (Free(Right(ffreea)), Free(Right(ffreeb))) ⇒
+        Free(Right(F.map2(ffreea, ffreeb)(product)))
+    }
+
+    def lift[A, B](f: A => B): Free[F, A] => Free[F, B] = {
+      case Free(Left(a)) ⇒ Free(Left(f(a)))
+      case Free(Right(ffreea)) ⇒ Free(Right(F.map(ffreea)(lift(f))))
+    }
+  }
+}
