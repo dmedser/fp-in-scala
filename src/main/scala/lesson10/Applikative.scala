@@ -224,16 +224,16 @@ object Free {
     def unit: Free[F, Unit] = Free(Left(()))
 
     def product[A, B](fa: Free[F, A], fb: Free[F, B]): Free[F, (A, B)] = (fa, fb) match {
-      case (Free(Left(a)), Free(Left(b))) ⇒ Free(Left((a, b)))
-      case (Free(Left(a)), Free(Right(ffreeb))) ⇒ Free(Right(F.map(ffreeb)(freeb ⇒ map(freeb)(b ⇒ (a, b)))))
-      case (Free(Right(ffreea)), Free(Left(b))) ⇒ Free(Right(F.map(ffreea)(freea ⇒ map(freea)(a ⇒ (a, b)))))
-      case (Free(Right(ffreea)), Free(Right(ffreeb))) ⇒
-        Free(Right(F.map2(ffreea, ffreeb)(product)))
+      case (Free(Left(a)), Free(Left(b))) => Free(Left((a, b)))
+      case (Free(Left(_)), Free(Right(ffreeb))) => Free(Right(F.map(ffreeb)(freeb => product(fa, freeb))))
+      case (Free(Right(ffreea)), Free(Left(_))) => Free(Right(F.map(ffreea)(freea => product(freea, fb))))
+      case (Free(Right(ffreea)), Free(Right(ffreeb))) =>
+        Free(Right(F.map(ffreea)(freea => Free(Right(F.map(ffreeb)(freeb => product(freea, freeb)))))))
     }
 
     def lift[A, B](f: A => B): Free[F, A] => Free[F, B] = {
-      case Free(Left(a)) ⇒ Free(Left(f(a)))
-      case Free(Right(ffreea)) ⇒ Free(Right(F.map(ffreea)(lift(f))))
+      case Free(Left(a)) => Free(Left(f(a)))
+      case Free(Right(ffreea)) => Free(Right(F.map(ffreea)(lift(f))))
     }
   }
 }
