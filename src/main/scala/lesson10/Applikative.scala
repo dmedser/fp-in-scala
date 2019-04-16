@@ -220,7 +220,7 @@ object ContrApplikative {
 case class Free[F[_], A](unwrap: A Either F[Free[F, A]])
 
 object Free {
-  implicit def freeApplikative[F[_]](implicit F: Applikative[F]): Applikative[λ[α => Free[F, α]]] = new Applikative[λ[α => Free[F, α]]] {
+  implicit def freeApplikative[F[_]](implicit F: Funktor[F]): Applikative[λ[α => Free[F, α]]] = new Applikative[λ[α => Free[F, α]]] {
     def unit: Free[F, Unit] = Free(Left(()))
 
     def product[A, B](fa: Free[F, A], fb: Free[F, B]): Free[F, (A, B)] = (fa, fb) match {
