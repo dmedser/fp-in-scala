@@ -170,10 +170,6 @@ object Distributive {
   }
 }
 
-// Homework:
-// create ADT for a binary tree with values in branches and leaves
-// write traversable instances that traverse a tree in DFS (inorder, preorder, postorder) and BFS.
-
 sealed trait Tree[+A]
 case class Leaf[A](value: A) extends Tree[A]
 case class Branch[A](value: A, left: Tree[A], right: Tree[A]) extends Tree[A]

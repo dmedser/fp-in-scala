@@ -1,3 +1,5 @@
+package lesson10
+
 import lesson10.ApplicativeOps._
 import cats.syntax.either._
 import lesson10.Applikative
@@ -50,10 +52,7 @@ object Examples extends App {
   case class Person(name: String, age: Int)
 
   def validatePerson(name: String, age: Int): Validated[Person] =
-    (
-      validateMaxLen(name, 5),
-      validateAge(age)
-    ).map2(Person.apply)
+    (validateMaxLen(name, 5), validateAge(age)).map2(Person.apply)
 
   println {
     validatePerson("Tony", 25)

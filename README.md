@@ -136,3 +136,28 @@ See `./src/main/scala/lesson7/task.md`
 3. Applicative Co-/Contra-variant functor via Monoidal in Scala
 4. Applicative validator example
 5. Applicative derivation: const, id, sum, prod, exp, comp
+
+#### Lessons 11 - Traversable and Distributive Functors
+
+See `./src/main/scala/lesson11/task.md`
+
+#### Lessons 12 - Definitions of Monad
+
+1. via Kleisli category
+2. via Monoidal category
+3. via Adjunctions
+
+#### Lessons 13 - Particular Monads
+
+1. Reader
+2. Writer
+3. State
+4. Either, Try, Option
+
+#### Lessons 14 - Particular Monads
+
+1. Ior
+2. Tree-like
+3. Cont
+4. Eval
+5. Free monad

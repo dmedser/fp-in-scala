@@ -2,14 +2,25 @@ name := "rbp-fp-in-scala"
 
 version := "0.1"
 
-scalaVersion := "2.12.7"
+scalaVersion := "2.12.8"
 
 libraryDependencies ++= Seq(
-  "org.typelevel" %% "cats-core" %"1.5.0",
-  "org.typelevel" %% "cats-laws" % "1.5.0",
-  "org.typelevel" %% "cats-testkit" % "1.5.0" % Test,
+  "org.typelevel" %% "cats-core" %"1.6.0",
+  "org.typelevel" %% "cats-laws" % "1.6.0",
+  "org.typelevel" %% "cats-testkit" % "1.6.0" % Test,
   "com.comcast" %% "ip4s" % "1.0.2",
   "org.scalatest" %% "scalatest" % "3.0.5" % Test
+)
+
+scalacOptions ++= List(
+  "-deprecation",
+  "-feature",
+  "-Xfatal-warnings",
+  //"-Xlint",
+  "-Ypartial-unification",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-language:existentials"
 )
 
 libraryDependencies ++= {
@@ -30,14 +41,3 @@ libraryDependencies ++= {
 
   compile ++ test.map(_ % Test) ++ compilerPlugins
 }
-
-scalacOptions ++= Seq(
-  "-encoding", "utf8",
-  "-Xfatal-warnings",
-  "-deprecation",
-  "-unchecked",
-  "-language:implicitConversions",
-  "-language:higherKinds",
-  "-language:existentials",
-  "-language:postfixOps"
-)

@@ -8,42 +8,41 @@ trait MapInstances extends MapInstances1
 
 trait MapInstances1 extends MapInstances2 {
   implicit def mapMergeBoundedSemilattice[K, V: Semilattice] = new BoundedSemilattice[Map[K, V]]
-    with MapMergeCombine[K, V] with MapEmpty[K, V] {
+    with MapEmpty[K, V] with MapMergeCombine[K, V] {
     val V = Semilattice[V]
   }
+
 }
 
 trait MapInstances2 extends MapInstances3 {
   implicit def mapMergeBoundedBand[K, V: Band] = new BoundedBand[Map[K, V]]
-    with MapMergeCombine[K, V] with MapEmpty[K, V] {
+    with MapEmpty[K, V] with MapMergeCombine[K, V] {
     val V = Band[V]
   }
 }
 
 trait MapInstances3 extends MapInstances4 {
   implicit def mapMergeCommutativeMonoid[K, V: CommutativeSemigroup] = new CommutativeMonoid[Map[K, V]]
-    with MapMergeCombine[K, V] with MapEmpty[K, V] {
+    with MapEmpty[K, V] with MapMergeCombine[K, V] {
     val V = CommutativeSemigroup[V]
   }
 }
 
 trait MapInstances4 extends MapInstances5 {
   implicit def mapMergeMonoid[K, V: Semigroup] = new Monoid[Map[K, V]]
-    with MapMergeCombine[K, V] with MapEmpty[K, V] {
+    with MapEmpty[K, V] with MapMergeCombine[K, V] {
     val V = Semigroup[V]
   }
-
 }
 
 trait MapInstances5 {
   implicit def mapReplaceMonoid[K, V] = new Monoid[Map[K, V]]
-    with MapReplaceCombine[K, V] with MapEmpty[K, V]
+    with MapEmpty[K, V] with MapReplaceCombine[K, V]
 }
 
 trait MapMergeCombine[K, V] {
+  import cats.syntax.semigroup._
   protected implicit def V: Semigroup[V]
-  import cats.syntax.semigroup._ // |+|
-
   def combine(x: Map[K, V], y: Map[K, V]): Map[K, V] = {
     val xKeys = x.keySet
     val yKeys = y.keySet

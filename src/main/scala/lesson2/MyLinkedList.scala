@@ -1,5 +1,7 @@
 package lesson2
 
+import scala.annotation.tailrec
+
 sealed trait MyLinkedList[+A] {
   def head: A
   def tail: MyLinkedList[A]
@@ -10,6 +12,7 @@ sealed trait MyLinkedList[+A] {
   }
 
   def drop(n: Int): MyLinkedList[A] = {
+    @tailrec
     def go(res: MyLinkedList[A], acc: Int): MyLinkedList[A] =
       if (acc == n) res
       else go(res.tail, acc + 1)
@@ -21,6 +24,7 @@ sealed trait MyLinkedList[+A] {
   }
 
   def dropWhile(f: A => Boolean): MyLinkedList[A] = {
+    @tailrec
     def go(res: MyLinkedList[A]): MyLinkedList[A] =
       res match {
         case Cons(head, tail) if f(head) => go(tail)
@@ -31,6 +35,7 @@ sealed trait MyLinkedList[+A] {
   }
 
   def size: Int = {
+    @tailrec
     def go(res: MyLinkedList[A], size: Int): Int = res match {
       case Nil => size
       case Cons(_, tail) => go(tail, size + 1)
@@ -80,6 +85,7 @@ sealed trait MyLinkedList[+A] {
     * Implement function that folds list starting from first element by applying f function
     */
   def foldLeft[B](z: B)(f: (B, A) => B): B = {
+    @tailrec
     def go(res: B, ys: MyLinkedList[A]): B = ys match {
       case Cons(head, tail) => go(f(res, head), tail)
       case _ => res
@@ -113,6 +119,7 @@ sealed trait MyLinkedList[+A] {
     */
   //def reverse: List[A] = ???
   def reverse: MyLinkedList[A] = {
+    @tailrec
     def go(l: MyLinkedList[A], r: MyLinkedList[A]): MyLinkedList[A] = l match {
       case Cons(head, tail) => go(tail, Cons(head, r))
       case _ => r
