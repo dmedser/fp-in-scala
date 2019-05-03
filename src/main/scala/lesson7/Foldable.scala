@@ -22,7 +22,15 @@ trait Foldable[F[_]] {
     def combine(x: Boolean, y: Boolean): Boolean = x || y
   }
 
+  def foldMap[A, M : Monoid](fa: F[A])(f: A => M): M
+
+  def foldr[A, B](fa: F[A])(z: B)(f: (A, B) => B): B
+
+  def foldl[A, B](fa: F[A])(z: B)(f: (B, A) => B): B
+
+  /*
   // Часть 1.
+
   // foldMap через foldr
   def foldMap[A, M : Monoid](fa: F[A])(f: A => M): M =
     foldr(fa)(implicitly[Monoid[M]].empty) { case (a, m) => f(a) |+| m }
@@ -60,6 +68,7 @@ trait Foldable[F[_]] {
     }
     fn(z)
   }
+  */
 
   // Часть 2.
   def headOption[A](fa: F[A]): Option[A] =

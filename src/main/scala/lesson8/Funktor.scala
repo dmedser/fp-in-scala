@@ -25,7 +25,7 @@ trait ContraFunktor[F[_]] {
 }
 
 object Funktor {
-  def apply[F[_]](implicit ev: Funktor[F]): Funktor[F] = ev
+  def apply[F[_]: Funktor]: Funktor[F] = implicitly
 
   // concrete functor examples
   implicit val optionFunktor: Funktor[Option] = new Funktor[Option] {

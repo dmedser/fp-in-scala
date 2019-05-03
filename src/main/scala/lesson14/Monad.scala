@@ -20,7 +20,6 @@ trait Monad[F[_]] {
   def pure[A](a: A): F[A]
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
 
-
   // Functor and Applicative can be expressed via Monad
   def map[A, B](fa: F[A])(f: A => B): F[B] = flatMap(fa)(a => pure(f(a)))
   def map2[A, B, C](fa: F[A], fb: F[B])(f: (A, B) => C): F[C] = flatMap(fa)(a => map(fb)(b => f(a, b)))
@@ -29,10 +28,40 @@ trait Monad[F[_]] {
 
 object Monad {
 
-  implicit val idMonad: Monad[λ[α => α]] = ???
+  def apply[F[_] : Monad]: Monad[F] = implicitly
 
-  implicit def aAndFMonad[F[_] : Monad]: Monad[λ[α => (α, F[α])]] = ???
-  implicit def aOrFMonad[F[_] : Monad]: Monad[λ[α => α :+: F[α]]] = ???
+  implicit val idMonad: Monad[λ[α => α]] = new Monad[λ[α => α]] {
+    def pure[A](a: A): Id[A] = a
+
+    def flatMap[A, B](fa: A)(f: A => Id[B]): Id[B] = f(fa)
+  }
+
+  implicit def aAndFMonad[F[_] : Monad]: Monad[λ[α => α :*: F[α]]] = new Monad[λ[α => α :*: F[α]]] {
+    def pure[A](a: A): A :*: F[A] = (a, Monad[F].pure(a))
+
+    def flatMap[A, B](aAndF: A :*: F[A])(f: A => B :*: F[B]): B :*: F[B] = {
+      val a = aAndF._1
+      val fa = aAndF._2
+      (f(a)._1, Monad[F].flatMap(fa)(f.andThen(_._2)))
+    }
+  }
+
+  implicit def aOrFMonad[F[_] : Monad]: Monad[λ[α => α :+: F[α]]] = new Monad[λ[α => α :+: F[α]]] {
+    def pure[A](a: A): A :+: F[A] = Left(a)
+
+    def flatMap[A, B](aOrF: A :+: F[A])(f: A => B :+: F[B]): B :+: F[B] =
+      aOrF match {
+        case Left(a) => f(a)
+        case Right(fa) =>
+          Right(Monad[F].flatMap(fa) { a =>
+            f(a) match {
+              case Left(b) => Monad[F].pure(b)
+              case Right(fb) => fb
+            }
+          })
+      }
+  }
+
   implicit def fExpRMonad[R, F[_] : Monad]: Monad[λ[α => R => F[α]]] = ???
 
   implicit def prod2Monads[F[_] : Monad, G[_] : Monad]: Monad[λ[α => (F[α], G[α])]] = ???
