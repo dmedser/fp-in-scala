@@ -1,6 +1,6 @@
 package lesson14
 
-trait UtilMonadInstances {
+object UtilMonadInstances {
 
   implicit val listMonad: Monad[List] = new Monad[List] {
     def pure[A](a: A): List[A] = List(a)

@@ -62,14 +62,14 @@ object Monad {
       }
   }
 
-  implicit def fExpRMonad[R, F[_] : Monad]: Monad[λ[α => R => F[α]]] = ???
+  //implicit def fExpRMonad[R, F[_] : Monad]: Monad[λ[α => R => F[α]]] = ???
 
-  implicit def prod2Monads[F[_] : Monad, G[_] : Monad]: Monad[λ[α => (F[α], G[α])]] = ???
+  //implicit def prod2Monads[F[_] : Monad, G[_] : Monad]: Monad[λ[α => (F[α], G[α])]] = ???
   // there are many more, but they are no rules(?) to construct a lawful monad
 
 
   // monads do not compose in general (but they do if one monad can be restricted - how?)
-  implicit def composeMonad[F[_] : Monad, G[_] : Monad]: Monad[λ[α => G[F[α]]]] = ???
+  //implicit def composeMonad[F[_] : Monad, G[_] : Monad]: Monad[λ[α => G[F[α]]]] = ???
   // monads compose with the aid of monad transformers - see the next lessons
 
 }

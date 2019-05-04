@@ -1,7 +1,6 @@
 package lesson7
 
 import cats.Monoid
-import cats.syntax.semigroup._
 
 trait Foldable[F[_]] {
 
@@ -147,7 +146,8 @@ object LazyFoldableOps {
   }
 }
 
-object Main extends App {
+object FoldrNStream extends App {
+
   import LazyFoldableInstances._
   import LazyFoldableOps._
 
