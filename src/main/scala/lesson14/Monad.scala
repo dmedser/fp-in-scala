@@ -33,7 +33,7 @@ object Monad {
   implicit val idMonad: Monad[λ[α => α]] = new Monad[λ[α => α]] {
     def pure[A](a: A): Id[A] = a
 
-    def flatMap[A, B](fa: A)(f: A => Id[B]): Id[B] = f(fa)
+    def flatMap[A, B](fa: Id[A])(f: A => Id[B]): Id[B] = f(fa)
   }
 
   implicit def aAndFMonad[F[_] : Monad]: Monad[λ[α => α :*: F[α]]] = new Monad[λ[α => α :*: F[α]]] {
@@ -62,11 +62,21 @@ object Monad {
       }
   }
 
-  //implicit def fExpRMonad[R, F[_] : Monad]: Monad[λ[α => R => F[α]]] = ???
+  implicit def fExpRMonad[R, F[_] : Monad]: Monad[λ[α => R => F[α]]] = new Monad[λ[α => R => F[α]]] {
+    def pure[A](a: A): R => F[A] = (_: R) => Monad[F].pure(a)
 
-  //implicit def prod2Monads[F[_] : Monad, G[_] : Monad]: Monad[λ[α => (F[α], G[α])]] = ???
+    def flatMap[A, B](rToFa: R => F[A])(f: A => R => F[B]): R => F[B] =
+      r => Monad[F].flatMap(rToFa(r))(a => f(a)(r))
+  }
+
+  implicit def prod2Monads[F[_] : Monad, G[_] : Monad]: Monad[λ[α => F[α] :*: G[α]]] =
+    new Monad[λ[α => F[α] :*: G[α]]] {
+      def pure[A](a: A): F[A] :*: G[A] = (Monad[F].pure(a), Monad[G].pure(a))
+
+      def flatMap[A, B](faga: F[A] :*: G[A])(f: A => F[B] :*: G[B]): F[B] :*: G[B] =
+        (Monad[F].flatMap(faga._1)(f andThen (_._1)), Monad[G].flatMap(faga._2)(f andThen (_._2)))
+    }
   // there are many more, but they are no rules(?) to construct a lawful monad
-
 
   // monads do not compose in general (but they do if one monad can be restricted - how?)
   //implicit def composeMonad[F[_] : Monad, G[_] : Monad]: Monad[λ[α => G[F[α]]]] = ???
@@ -80,7 +90,6 @@ case class Lst[A](unwrap: Unit :+: (A, Lst[A]))
 // pure: List(a)
 // flatten: ((1), (2, 3), (4, 5, 6)) -> (1, 2, 3, 4, 5, 6)
 
-
 // Tree-like structures
 case class BinTree[A](unwrap: A :+: (BinTree[A], BinTree[A]))
 
@@ -90,8 +99,6 @@ object FTree {
   implicit def monad[F[_] : Funktor]: Monad[FTree[F, ?]] = ???
 }
 // Can you see similarity with lesson10.Free? We'll return to it later
-
-
 
 // Single-value monads (the rest)
 case class Ior[E, A](unwrap: E :+: (E, A) :+: A)
@@ -111,10 +118,6 @@ object Ior {
 // How to make an additive E' of any E? Via the free Semigroup - e.g. NonEmptyChain.
 // Ior often goes with Nel/Nec on the left.
 
-
-
-
-
 case class Eval[A](unwrap: A :+: (() => A))
 // Semantics: composition of lazy computations
 // Explicitly encodes laziness as a data type rather than: lazy val a, a: => A, etc.
@@ -122,8 +125,6 @@ case class Eval[A](unwrap: A :+: (() => A))
 
 // Separate topic: stack-safety
 // We'll learn it later.
-
-
 
 case class Cont[R, A](unwrap: (A => R) => R)
 // Semantics: composition of CPS computations
@@ -142,7 +143,6 @@ case class Cont[R, A](unwrap: (A => R) => R)
 // }
 object Cont {
   implicit def monad[R]: Monad[Cont[R, ?]] = ???
-
 
   // call with current continuation, gives the explicit control on continuation
   def callCC[R, A, B](k: (A => Cont[R, B]) => Cont[R, A]): Cont[R, A] =
