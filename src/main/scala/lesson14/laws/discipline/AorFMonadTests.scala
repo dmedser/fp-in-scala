@@ -5,7 +5,7 @@ import cats.laws.discipline._
 import lesson14.Monad
 import lesson14.`package`.:+:
 import lesson14.laws.AorFMonadLaws
-import org.scalacheck.Prop._
+import org.scalacheck.Prop.forAll
 import org.scalacheck.{Arbitrary, Prop}
 import org.typelevel.discipline.Laws
 

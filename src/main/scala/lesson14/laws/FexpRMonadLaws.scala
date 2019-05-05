@@ -1,6 +1,6 @@
 package lesson14.laws
 
-import cats.laws.{IsEq, _}
+import cats.laws._
 import lesson14.Monad
 
 trait FexpRMonadLaws[R, F[_]] {

@@ -1,6 +1,8 @@
 package lesson14
 
 import cats.Semigroup
+import lesson10.Applikative
+import lesson11.Traversable
 import lesson8.Funktor
 
 object `package` {
@@ -19,6 +21,9 @@ trait Monad[F[_]] {
 
   def pure[A](a: A): F[A]
   def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B]
+
+  def flatten[A](ffa: F[F[A]]): F[A] =
+    flatMap(ffa)(fa => fa)
 
   // Functor and Applicative can be expressed via Monad
   def map[A, B](fa: F[A])(f: A => B): F[B] = flatMap(fa)(a => pure(f(a)))
@@ -79,7 +84,18 @@ object Monad {
   // there are many more, but they are no rules(?) to construct a lawful monad
 
   // monads do not compose in general (but they do if one monad can be restricted - how?)
-  //implicit def composeMonad[F[_] : Monad, G[_] : Monad]: Monad[λ[α => G[F[α]]]] = ???
+  implicit def composeMonad[F[_] : Monad : Applikative, G[_] : Monad : Traversable]: Monad[λ[α => F[G[α]]]] =
+    new Monad[λ[α => F[G[α]]]] {
+      def pure[A](a: A): F[G[A]] = Monad[F].pure(Monad[G].pure(a))
+
+      def flatMap[A, B](fga: F[G[A]])(f: A => F[G[B]]): F[G[B]] =
+        Monad[F].map(
+          Monad[F].flatten(
+            Monad[F]
+              .map[G[A], F[G[G[B]]]](fga)(ga => Traversable[G].sequence(Monad[G].map[A, F[G[B]]](ga)(a => f(a))))
+          )
+        )(ggb => Monad[G].flatten(ggb))
+    }
   // monads compose with the aid of monad transformers - see the next lessons
 
 }

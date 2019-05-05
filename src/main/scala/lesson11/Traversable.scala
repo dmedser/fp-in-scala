@@ -1,9 +1,9 @@
 package lesson11
 
+import cats.syntax.either._
 import cats.{Apply, Monoid}
 import lesson10.Applikative
 import lesson8.Funktor
-import cats.syntax.either._
 
 /*
 @runarorama
@@ -132,7 +132,7 @@ trait Distributive[F[_]] extends Funktor[F] {
 }
 
 object Distributive {
-  def apply[F[_]](implicit ev: Distributive[F]): Distributive[F] = ev
+  def apply[F[_]: Distributive]: Distributive[F] = implicitly
 
   // All representable functors are distributive
   // representable functor is such that: F[A] <-> R => A

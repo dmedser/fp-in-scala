@@ -4,6 +4,12 @@ import cats.Monoid
 
 trait Foldable[F[_]] {
 
+  def foldMap[A, M : Monoid](fa: F[A])(f: A => M): M
+
+  def foldr[A, B](fa: F[A])(z: B)(f: (A, B) => B): B
+
+  def foldl[A, B](fa: F[A])(z: B)(f: (B, A) => B): B
+
   type Endo[A] = A => A
 
   def endoMonoid[A](f: (Endo[A], Endo[A]) => Endo[A]): Monoid[Endo[A]] = new Monoid[Endo[A]] {
@@ -20,12 +26,6 @@ trait Foldable[F[_]] {
     def empty: Boolean = false
     def combine(x: Boolean, y: Boolean): Boolean = x || y
   }
-
-  def foldMap[A, M : Monoid](fa: F[A])(f: A => M): M
-
-  def foldr[A, B](fa: F[A])(z: B)(f: (A, B) => B): B
-
-  def foldl[A, B](fa: F[A])(z: B)(f: (B, A) => B): B
 
   /*
   // Часть 1.

@@ -17,4 +17,10 @@ object UtilMonadInstances {
         case Right(b) => f(b)
       }
   }
+
+  implicit def optionMonad: Monad[Option] = new Monad[Option] {
+    def pure[A](a: A): Option[A] = Some(a)
+
+    def flatMap[A, B](option: Option[A])(f: A => Option[B]): Option[B] = option.flatMap(f)
+  }
 }

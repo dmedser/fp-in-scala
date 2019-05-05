@@ -2,25 +2,27 @@ package lesson14.laws.discipline
 
 import cats.Eq
 import cats.laws.discipline._
+import lesson10.Applikative
 import lesson14.Monad
-import lesson14.laws.FexpRMonadLaws
+import lesson14.laws.ComposeMonadsLaws
+import lesson11.Traversable
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Arbitrary, Prop}
 import org.typelevel.discipline.Laws
 
-trait FexpRMonadTests[R, F[_]] extends Laws {
-  def laws: FexpRMonadLaws[R, F]
+trait ComposeMonadsTests[F[_], G[_]] extends Laws {
+  def laws: ComposeMonadsLaws[F, G]
 
   def monad[A : Arbitrary, B](
     implicit
-    ArbAtoRtoFB: Arbitrary[A => R => F[B]],
+    ArbFGA: Arbitrary[F[G[A]]],
     ArbAtoB: Arbitrary[A => B],
-    ArbRtoFA: Arbitrary[R => F[A]],
-    EqRtoFB: Eq[R => F[B]],
-    EqRroFA: Eq[R => F[A]]
+    ArbAtoFGB: Arbitrary[A => F[G[B]]],
+    EqFGA: Eq[F[G[A]]],
+    EqFGB: Eq[F[G[B]]]
   ): RuleSet =
     new RuleSet {
-      def name: String = "FexpR monad"
+      def name: String = "ComposeMonads monad"
       def bases: Seq[(String, RuleSet)] = Nil
       def parents: Seq[RuleSet] = Nil
       def props: Seq[(String, Prop)] =
@@ -32,9 +34,16 @@ trait FexpRMonadTests[R, F[_]] extends Laws {
     }
 }
 
-object FexpRMonadTests {
-  def apply[R, F[_]](implicit F: Monad[F], G: Monad[λ[α => R => F[α]]]): FexpRMonadTests[R, F] =
-    new FexpRMonadTests[R, F] {
-      def laws: FexpRMonadLaws[R, F] = FexpRMonadLaws[R, F]
+object ComposeMonadsTests {
+  def apply[F[_], G[_]](
+    implicit
+    MF: Monad[F],
+    TF: Traversable[F],
+    AF: Applikative[F],
+    MG: Monad[G],
+    H: Monad[λ[α => F[G[α]]]]
+  ): ComposeMonadsTests[F, G] =
+    new ComposeMonadsTests[F, G] {
+      def laws: ComposeMonadsLaws[F, G] = ComposeMonadsLaws[F, G]
     }
 }
