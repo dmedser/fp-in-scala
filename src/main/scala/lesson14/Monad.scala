@@ -112,14 +112,28 @@ case class BinTree[A](unwrap: A :+: (BinTree[A], BinTree[A]))
 // Tree, whose shape is determined by F
 case class FTree[F[_], A](unwrap: A :+: F[FTree[F, A]])
 object FTree {
-  implicit def monad[F[_] : Funktor]: Monad[FTree[F, ?]] = ???
+  import cats.syntax.either._
+
+  implicit def monad[F[_] : Funktor]: Monad[FTree[F, ?]] = new Monad[FTree[F, ?]] {
+    def pure[A](a: A): FTree[F, A] = FTree(Left(a))
+
+    def flatMap[A, B](fa: FTree[F, A])(f: A => FTree[F, B]): FTree[F, B] =
+      fa.unwrap match {
+        case Left(a) => f(a)
+        case Right(fftreea) => FTree[F, B](Funktor[F].map(fftreea)(ftreea => flatMap(ftreea)(f)).asRight[B])
+      }
+  }
 }
 // Can you see similarity with lesson10.Free? We'll return to it later
 
 // Single-value monads (the rest)
 case class Ior[E, A](unwrap: E :+: (E, A) :+: A)
 object Ior {
-  implicit def monad[E : Semigroup]: Monad[Ior[E, ?]] = ???
+  implicit def monad[E : Semigroup]: Monad[Ior[E, ?]] = new Monad[Ior[E, ?]] {
+    def pure[A](a: A): Ior[E, A] = Ior(Right(Right(a)))
+
+    def flatMap[A, B](fa: Ior[E, A])(f: A => Ior[E, B]): Ior[E, B] = ???
+  }
 }
 // Semantics:
 // Ior can be either:

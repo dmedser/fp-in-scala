@@ -156,9 +156,8 @@ object Distributive {
 
   implicit def compDistributive[F[_] : Distributive, G[_] : Distributive]: Distributive[λ[α => F[G[α]]]] =
     new Distributive[λ[α => F[G[α]]]] {
-
-      // TODO
-      def distribute[H[_] : Funktor, A, B](ha: H[A])(f: A => F[G[B]]): F[G[H[B]]] = ???
+      def distribute[H[_] : Funktor, A, B](ha: H[A])(f: A => F[G[B]]): F[G[H[B]]] =
+        Funktor[F].map(Distributive[F].distribute(ha)(f))(hgb => Distributive[G].cosequence(hgb))
 
       def lift[A, B](f: A => B): F[G[A]] => F[G[B]] = fga => Distributive[F].map(fga)(Distributive[G].lift(f))
     }
