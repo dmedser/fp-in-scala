@@ -13,5 +13,5 @@ class MonadSuite extends CatsSuite {
   checkAll("AandFMonadLaws", AandFMonadTests[Either[Float, ?]].monad[Int, String])
   checkAll("AorFMonadLaws", AorFMonadTests[Option].monad[Double, Long])
   checkAll("Prod2MonadsLaws", Prod2MonadsTests[List, Either[Long, ?]].monad[Int, Boolean])
-  checkAll("ComposeMonadLaws", ComposeMonadTests[Option, List].monad[String, Double])
+  checkAll("ComposeMonadLaws", ComposeMonadTests[List, List].monad[String, Double])
 }

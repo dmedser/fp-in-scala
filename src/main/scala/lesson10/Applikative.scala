@@ -39,7 +39,7 @@ object Applikative {
     def unit: List[Unit] = List(())
 
     def product[A, B](la: List[A], lb: List[B]): List[(A, B)] =
-      la.zip(lb)
+      la.flatMap(a => lb.map(b => (a, b)))
   }
 
   implicit val optionApplikative: Applikative[Option] = new Applikative[Option] {
