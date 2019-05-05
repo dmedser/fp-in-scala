@@ -4,14 +4,14 @@ import cats.Eq
 import cats.laws.discipline._
 import lesson10.Applikative
 import lesson14.Monad
-import lesson14.laws.ComposeMonadsLaws
+import lesson14.laws.ComposeMonadLaws
 import lesson11.Traversable
 import org.scalacheck.Prop.forAll
 import org.scalacheck.{Arbitrary, Prop}
 import org.typelevel.discipline.Laws
 
-trait ComposeMonadsTests[F[_], G[_]] extends Laws {
-  def laws: ComposeMonadsLaws[F, G]
+trait ComposeMonadTests[F[_], G[_]] extends Laws {
+  def laws: ComposeMonadLaws[F, G]
 
   def monad[A : Arbitrary, B](
     implicit
@@ -34,16 +34,16 @@ trait ComposeMonadsTests[F[_], G[_]] extends Laws {
     }
 }
 
-object ComposeMonadsTests {
+object ComposeMonadTests {
   def apply[F[_], G[_]](
     implicit
     MF: Monad[F],
-    TF: Traversable[F],
     AF: Applikative[F],
     MG: Monad[G],
+    TG: Traversable[G],
     H: Monad[λ[α => F[G[α]]]]
-  ): ComposeMonadsTests[F, G] =
-    new ComposeMonadsTests[F, G] {
-      def laws: ComposeMonadsLaws[F, G] = ComposeMonadsLaws[F, G]
+  ): ComposeMonadTests[F, G] =
+    new ComposeMonadTests[F, G] {
+      def laws: ComposeMonadLaws[F, G] = ComposeMonadLaws[F, G]
     }
 }

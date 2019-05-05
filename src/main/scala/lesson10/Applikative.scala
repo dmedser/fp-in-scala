@@ -42,6 +42,15 @@ object Applikative {
       la.zip(lb)
   }
 
+  implicit val optionApplikative: Applikative[Option] = new Applikative[Option] {
+    def lift[A, B](f: A => B): Option[A] => Option[B] = oa => oa.map(f)
+
+    def unit: Option[Unit] = Some(())
+
+    def product[A, B](oa: Option[A], ob: Option[B]): Option[(A, B)] =
+      oa.flatMap(a => ob.map(b => (a, b)))
+  }
+
   // including M = 1 (any singleton)
   implicit def constApplikative[M : Monoid]: Applikative[λ[α => M]] = new Applikative[λ[α => M]] {
     import cats.syntax.semigroup._
