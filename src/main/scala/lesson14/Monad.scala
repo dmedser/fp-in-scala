@@ -120,7 +120,7 @@ object FTree {
     def flatMap[A, B](fa: FTree[F, A])(f: A => FTree[F, B]): FTree[F, B] =
       fa.unwrap match {
         case Left(a) => f(a)
-        case Right(fftreea) => FTree[F, B](Funktor[F].map(fftreea)(ftreea => flatMap(ftreea)(f)).asRight[B])
+        case Right(fftreea) => FTree(Funktor[F].map(fftreea)(ftreea => flatMap(ftreea)(f)).asRight[B])
       }
   }
 }
@@ -132,9 +132,50 @@ object Ior {
   implicit def monad[E : Semigroup]: Monad[Ior[E, ?]] = new Monad[Ior[E, ?]] {
     def pure[A](a: A): Ior[E, A] = Ior(Right(Right(a)))
 
-    def flatMap[A, B](fa: Ior[E, A])(f: A => Ior[E, B]): Ior[E, B] = ???
+    import cats.syntax.semigroup._
+
+    def flatMap[A, B](fa: Ior[E, A])(f: A => Ior[E, B]): Ior[E, B] =
+      fa.unwrap match {
+        case Right(Right(a)) => f(a)
+        case Right(Left((e1, a))) =>
+          f(a).unwrap match {
+            case Right(Right(b)) => Ior(Right(Left((e1, b))))
+            case Right(Left((e2, b))) => Ior(Right(Left(e1 |+| e2, b)))
+            case Left(e2) => Ior(Left(e1 |+| e2))
+          }
+        case Left(e) => Ior(Left(e))
+      }
+  }
+
+  import cats.Eq
+  import org.scalacheck.{Arbitrary, Gen}
+
+  implicit def eqIor[E, A]: Eq[Ior[E, A]] = new Eq[Ior[E, A]] {
+    def eqv(x: Ior[E, A], y: Ior[E, A]): Boolean =
+      x equals y
+  }
+
+  implicit def arbIor[E, A](implicit E: Arbitrary[E], A: Arbitrary[A]): Arbitrary[Ior[E, A]] = {
+    val gen = {
+      import cats.syntax.either._
+
+      val someA = A.arbitrary.sample.get
+      val someEandA = (E.arbitrary.sample.get, A.arbitrary.sample.get)
+      val someE = E.arbitrary.sample.get
+
+      val list = List(
+        Ior(someA.asRight[(E, A)].asRight[E]),
+        Ior(someEandA.asLeft[A].asRight[E]),
+        Ior(someE.asLeft[Either[(E, A), A]])
+      )
+
+      Gen.oneOf(list)
+    }
+
+    Arbitrary.apply[Ior[E, A]](gen)
   }
 }
+
 // Semantics:
 // Ior can be either:
 //  1) pure value
@@ -172,7 +213,11 @@ case class Cont[R, A](unwrap: (A => R) => R)
 //    here we can do some computation of type A and pass it to the callback 0 or 1 or more times
 // }
 object Cont {
-  implicit def monad[R]: Monad[Cont[R, ?]] = ???
+  implicit def monad[R]: Monad[Cont[R, ?]] = new Monad[Cont[R, ?]] {
+    def pure[A](a: A): Cont[R, A] = ???
+
+    def flatMap[A, B](fa: Cont[R, A])(f: A => Cont[R, B]): Cont[R, B] = ???
+  }
 
   // call with current continuation, gives the explicit control on continuation
   def callCC[R, A, B](k: (A => Cont[R, B]) => Cont[R, A]): Cont[R, A] =
