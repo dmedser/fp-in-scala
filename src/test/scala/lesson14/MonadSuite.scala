@@ -6,6 +6,7 @@ import lesson14.UtilMonadInstances._
 import lesson14.laws.discipline._
 import org.scalacheck.Arbitrary.arbContainer
 
+
 class MonadSuite extends CatsSuite {
 
   checkAll("EitherMonadLaws", EitherMonadTests[Int].monad[Double, String])

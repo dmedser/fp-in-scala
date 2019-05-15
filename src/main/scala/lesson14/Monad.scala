@@ -150,10 +150,7 @@ object Ior {
   import cats.Eq
   import org.scalacheck.{Arbitrary, Gen}
 
-  implicit def eqIor[E, A]: Eq[Ior[E, A]] = new Eq[Ior[E, A]] {
-    def eqv(x: Ior[E, A], y: Ior[E, A]): Boolean =
-      x equals y
-  }
+  implicit def eqIor[E, A]: Eq[Ior[E, A]] = (x: Ior[E, A], y: Ior[E, A]) => x equals y
 
   implicit def arbIor[E, A](implicit E: Arbitrary[E], A: Arbitrary[A]): Arbitrary[Ior[E, A]] = {
     val gen = {
@@ -214,9 +211,10 @@ case class Cont[R, A](unwrap: (A => R) => R)
 // }
 object Cont {
   implicit def monad[R]: Monad[Cont[R, ?]] = new Monad[Cont[R, ?]] {
-    def pure[A](a: A): Cont[R, A] = ???
+    def pure[A](a: A): Cont[R, A] = Cont(aToR => aToR(a))
 
-    def flatMap[A, B](fa: Cont[R, A])(f: A => Cont[R, B]): Cont[R, B] = ???
+    def flatMap[A, B](fa: Cont[R, A])(f: A => Cont[R, B]): Cont[R, B] =
+      Cont[R, B](bToR => fa.unwrap(a => f(a).unwrap(bToR)))
   }
 
   // call with current continuation, gives the explicit control on continuation

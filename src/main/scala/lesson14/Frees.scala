@@ -17,7 +17,13 @@ import lesson8.Funktor
 
 // Free monoid: category of types => category of monoids
 case class FreeMonoid[A](unwrap: Unit :+: A :*: FreeMonoid[A]) {
-  def foldMap[B : Monoid](f: A => B): B = ???
+  import cats.syntax.semigroup._
+
+  def foldMap[B](f: A => B)(implicit B: Monoid[B]): B =
+    unwrap match {
+      case Left(_) => B.empty
+      case Right((a, fm)) => f(a) |+| fm.foldMap(f)
+    }
 }
 // Recursive structure, allows building any sequence of combined As:
 // Unit
@@ -26,10 +32,16 @@ case class FreeMonoid[A](unwrap: Unit :+: A :*: FreeMonoid[A]) {
 // A :*: ... :*: A :*: Unit
 // :*: is associative, Unit is neutral. Easy to implement Monoid algebra.
 
-
 // Free monad - also a monoid, but a bit different: category of functors => category of monads
-case class FreeMonad[F[_] : Funktor, A](unwrap: Id[A] :+: F[FreeMonad[F, A]]) { // Id :++: F :∘: FreeMonad[F, ?]
-  def foldMap[G[_] : Monad](f: F ~> G): G[A] = ???
+case class FreeMonad[F[_], A](unwrap: Id[A] :+: F[FreeMonad[F, A]])(implicit F: Funktor[F]) { // Id :++: F :∘: FreeMonad[F, ?]
+  def foldMap[G[_]](f: F ~> G)(implicit G: Monad[G]): G[A] =
+    unwrap match {
+      case Left(ida) => G.pure(ida)
+      case Right(ffreemonad) =>
+        Monad[G].flatten(
+          f[G[A]](Funktor[F].map[FreeMonad[F, A], G[A]](ffreemonad)(freemonad => freemonad.foldMap(f)))
+        )
+    }
 }
 // Recursive structure, allows building any sequence of composed Fs:
 // Id

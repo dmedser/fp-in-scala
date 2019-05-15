@@ -1,1 +1,1 @@
-implement ```def enumerate: Tree[Unit] => Tree[Int]``` with cats.data.State
+implement `def enumerate: Tree[Unit] => Tree[Int]` with cats.data.State
