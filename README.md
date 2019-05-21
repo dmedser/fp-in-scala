@@ -161,3 +161,13 @@ See `./src/main/scala/lesson11/task.md`
 3. Cont
 4. Eval
 5. Free monad
+
+#### Lesson 15 - Intro to Final Tagless ####
+
+1. Böhm-Berarducci encoding
+2. Initial algebra
+3. F-Algebra
+4. Fixpoint types
+5. Recursion Schemes (intro)
+6. Ad hoc unions with TF
+7. Expression problem (TF intro)

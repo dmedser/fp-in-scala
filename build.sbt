@@ -9,7 +9,8 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-laws" % "1.6.0",
   "org.typelevel" %% "cats-testkit" % "1.6.0" % Test,
   "com.comcast" %% "ip4s" % "1.0.2",
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test
+  "org.scalatest" %% "scalatest" % "3.0.5" % Test,
+  "com.github.julien-truffaut" %% "monocle-core" % "1.5.1-cats"
 )
 
 scalacOptions ++= List(
