@@ -150,7 +150,10 @@ object Ior {
   import cats.Eq
   import org.scalacheck.{Arbitrary, Gen}
 
-  implicit def eqIor[E, A]: Eq[Ior[E, A]] = (x: Ior[E, A], y: Ior[E, A]) => x equals y
+  implicit def eqIor[E, A]: Eq[Ior[E, A]] = new Eq[Ior[E, A]] {
+    def eqv(x: Ior[E, A], y: Ior[E, A]): Boolean =
+      x equals y
+  }
 
   implicit def arbIor[E, A](implicit E: Arbitrary[E], A: Arbitrary[A]): Arbitrary[Ior[E, A]] = {
     val gen = {

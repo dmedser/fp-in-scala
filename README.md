@@ -171,3 +171,12 @@ See `./src/main/scala/lesson11/task.md`
 5. Recursion Schemes (intro)
 6. Ad hoc unions with TF
 7. Expression problem (TF intro)
+
+#### Lesson 16 - Effect composition via monad transformers
+
+1. Ad-hoc effect composition
+2. Implementing nested monad instances via traverse and distributive
+3. ReaderT
+4. WriterT
+5. EitherT
+6. StateT
